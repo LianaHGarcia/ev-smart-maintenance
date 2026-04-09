@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { ChargerStatus, SessionData } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+
+const API_BASE_URL = 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
