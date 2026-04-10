@@ -8,7 +8,7 @@ class WebSocketService {
   private isConnected: boolean = false;
 
   connect() {
-    if (!this.socket) {
+    if (this.socket) {
       console.log('Connecting to WebSocket server...');
       return;
     }
@@ -38,22 +38,23 @@ class WebSocketService {
     this.socket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error);
     });
+  }
 
-    //to be able todisconnect from backend
-    disconnect() {
-      if (this.socket) {
-        this.socket.disconnect();
-        this.socket = null;
-        this.isConnected = false;
-        console.log('WebSocket disconnected');
-      }
+  //to be able to disconnect from backend
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+      this.isConnected = false;
+      console.log('WebSocket disconnected');
     }
+  }
 
-    //to be able to subscribe to real-time data updates
-    subscribe(callback: (data: RealTimeData) => void): () => void {
-        this.listeners.push(callback);
-        console.log(`[WS] Subscriber added (total: ${this.listeners.length})`);
-    
+  //to be able to subscribe to real-time data updates
+  subscribe(callback: (data: RealTimeData) => void): () => void {
+    this.listeners.push(callback);
+    console.log(`[WS] Subscriber added (total: ${this.listeners.length})`);
+
     // Return unsubscribe function
     return () => {
       this.listeners = this.listeners.filter(cb => cb !== callback);
@@ -62,9 +63,9 @@ class WebSocketService {
   }
 
   //check current connection status
-    getConnectionStatus(): boolean {
-        return this.isConnected;
-    }
+  getConnectionStatus(): boolean {
+    return this.isConnected;
+  }
 }
 
     export default new WebSocketService();
