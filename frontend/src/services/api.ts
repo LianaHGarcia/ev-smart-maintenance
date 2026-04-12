@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ChargerStatus, SessionData } from '../types';
+import { ChargerStatus, SessionData } from '../types/index';
 
 
 const API_BASE_URL = 'http://localhost:8000/api';

@@ -1,0 +1,165 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: #1A05A2;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-family: 'Arial', sans-serif;
+  font-size: 1.5em;
+  margin: 0;
+}
+
+.header h1 {
+  color: white;
+  margin: 0;
+}
+
+nav {
+  background-color: #8F0177;
+}
+
+.nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-item {
+  display: flex;
+  flex: 1;
+}
+
+nav a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-family: 'Arial', sans-serif;
+  flex: 1;
+  min-width: 100px;
+}
+
+nav a:hover {
+  background-color: #DE1A58;
+}
+
+nav a.active {
+  background-color: #F67D31;
+  font-weight: bold;
+}
+
+main {
+  flex: 1;
+  padding: 20px;
+  background-color: #f0f0f0;
+}
+
+.layout-content {
+  flex: 1;
+}
+
+footer {
+  background-color: #1A05A2;
+  color: white;
+  text-align: center;
+  padding: 15px;
+  font-family: 'Arial', sans-serif;
+}
+
+h1, h2, h3 {
+  color: #1A05A2;
+  font-family: 'Arial', sans-serif;
+}
+
+.cta-button {
+  display: inline-block;
+  background-color: #8F0177;
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+  margin-top: 15px;
+}
+
+.cta-button:hover {
+  background-color: #DE1A58;
+}
+
+.hero {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 5px;
+}
+
+.dashboard,
+.maintenance,
+.reports,
+.about {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.data-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+#tracking {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 400px;
+}
+
+#tracking div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#tracking label {
+  font-weight: bold;
+  color: #1A05A2;
+}
+
+#tracking input,
+#tracking select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 14px;
+}
+
+#tracking button {
+  background-color: #8F0177;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#tracking button:hover {
+  background-color: #DE1A58;
+}
+
+.about ul {
+  margin-left: 20px;
+}
+
+.about li {
+  margin: 10px 0;
+}
