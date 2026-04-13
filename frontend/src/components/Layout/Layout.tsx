@@ -15,7 +15,9 @@ const Layout: React.FC = () => {
     return (
         <div className="App layout">
             <header className="header layout-header">
-                <h1>EV Smart Maintenance</h1>
+                <div className="header-content">
+                    <img src="/logo.png" alt="EV Smart Maintenance Logo" className="header-logo" />
+                </div>
             </header>
             <nav aria-label="Primary">
                 <ul className="nav-list">

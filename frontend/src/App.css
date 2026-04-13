@@ -5,18 +5,24 @@
 }
 
 .header {
-  background-color: #1A05A2;
-  color: white;
-  padding: 20px;
-  text-align: center;
+  background-color: white;
+  padding: 15px;
   font-family: 'Arial', sans-serif;
-  font-size: 1.5em;
   margin: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-bottom: 2px solid #e0e0e0;
 }
 
-.header h1 {
-  color: white;
-  margin: 0;
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-logo {
+  height: 260px;
+  width: auto;
+  max-width: 280px;
 }
 
 nav {
@@ -93,17 +99,26 @@ h1, h2, h3 {
   background-color: #DE1A58;
 }
 
+.home-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100% - 200px);
+  padding: 40px 20px;
+}
+
 .hero {
   text-align: center;
-  padding: 40px 20px;
+  padding: 40px;
   background: white;
   border-radius: 5px;
+  max-width: 600px;
+  width: 100%;
 }
 
 .dashboard,
 .maintenance,
-.reports,
-.about {
+.reports {
   background: white;
   padding: 20px;
   border-radius: 5px;
@@ -114,6 +129,105 @@ h1, h2, h3 {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 15px;
   margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.status-card {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.06);
+}
+
+.status-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.status-card p {
+  margin: 8px 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1A05A2;
+}
+
+.status-card--good {
+  border-top: 4px solid #0e8a16;
+}
+
+.status-card--accent {
+  border-top: 4px solid #8F0177;
+}
+
+.status-card--warn {
+  border-top: 4px solid #d12f2f;
+}
+
+.status-card--neutral {
+  border-top: 4px solid #1A05A2;
+}
+
+.charger-table-wrap {
+  margin-top: 12px;
+  overflow-x: auto;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: white;
+}
+
+.charger-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.charger-table th,
+.charger-table td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.92rem;
+}
+
+.charger-table th {
+  background: #f7f7fb;
+  color: #1A05A2;
+  font-weight: 700;
+}
+
+.charger-table tbody tr:hover {
+  background: #faf9ff;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-pill--online {
+  color: #0e8a16;
+  background: #e8f8ea;
+}
+
+.status-pill--charging {
+  color: #8F0177;
+  background: #fae7f6;
+}
+
+.status-pill--fault {
+  color: #b32020;
+  background: #fde9e9;
+}
+
+.status-pill--offline {
+  color: #525252;
+  background: #efefef;
 }
 
 #tracking {
@@ -154,12 +268,4 @@ h1, h2, h3 {
 
 #tracking button:hover {
   background-color: #DE1A58;
-}
-
-.about ul {
-  margin-left: 20px;
-}
-
-.about li {
-  margin: 10px 0;
 }

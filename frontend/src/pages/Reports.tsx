@@ -6,7 +6,7 @@ const Reports: React.FC = () => {
       <h1>Reports Analytics</h1>
       <section>
         <h2>Report Overview</h2>
-        <p>Here you can find various reports related to the EV smart maintenance.</p>
+        <p>Here you can find various reports related to the maintenance sessions.</p>
       </section>
       <section>
         <h2>Data Insights</h2>

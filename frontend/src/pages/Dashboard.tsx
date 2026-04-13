@@ -1,13 +1,27 @@
 import React from 'react';
+import StatusCards from '../components/StatusCards';
+import ChargerList from '../components/ChargerList';
+import { ChargerStatus } from '../types';
+
+const mockChargers: ChargerStatus[] = [
+  {
+    id: 'CH-001',
+    name: 'Roundhay A1',
+    status: 'charging',
+    voltage: 402,
+    current: 118,
+    power: 47.4,
+    temperature: 41,
+    lastUpdated: new Date('2026-10-12T15:45:00'),
+  },
+];
 
 const Dashboard: React.FC = () => {
   return (
     <section className="dashboard">
       <h1>Dashboard</h1>
-      <h2>Vehicle Maintenance Data</h2>
-      <div className="data-cards">
-        {/* Data cards will be populated here */}
-      </div>
+      <StatusCards chargers={mockChargers} />
+      <ChargerList chargers={mockChargers} />
     </section>
   );
 };
