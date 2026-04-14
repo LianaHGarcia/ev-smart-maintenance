@@ -1,6 +1,5 @@
 import {io, Socket} from 'socket.io-client';
 import { RealTimeData } from '../types/index';
-import { disconnect } from 'node:cluster';
 
 class WebSocketService {
   private socket: Socket | null = null;
@@ -13,7 +12,7 @@ class WebSocketService {
       return;
     }
 
-    this.socket = io(process.env.REACT_APP_WS_URL, {
+    this.socket = io(process.env.REACT_APP_WS_URL || 'http://localhost:8000', {
         transports: ['websocket'],
         reconnection: true,
         reconnectionAttempts: Infinity,
