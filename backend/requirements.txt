@@ -1,3 +1,5 @@
 fastapi==0.135.3
 python-socketio==5.16.1
 uvicorn==0.44.0
+ocpp==0.20
+websockets>=10,<12
