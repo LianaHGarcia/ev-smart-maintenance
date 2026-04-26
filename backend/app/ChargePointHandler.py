@@ -68,7 +68,7 @@ class ChargePointHandler(OCPPChargePoint):
     async def _broadcast_update(self, payload: Dict[str, object]) -> None:
         await sio.emit("charger_updated", {"charger": payload})
 
-    @on(Action.boot_notification)
+    @on(Action.BootNotification)
     async def on_boot_notification(self, charge_point_vendor: str, charge_point_model: str, **kwargs):
         payload = charger_service.create_or_update_charger(
             {
@@ -86,12 +86,12 @@ class ChargePointHandler(OCPPChargePoint):
             status=RegistrationStatus.accepted,
         )
 
-    @on(Action.heartbeat)
+    @on(Action.Heartbeat)
     async def on_heartbeat(self):
         logger.debug("Heartbeat from %s", self.charge_point_id)
         return call_result.HeartbeatPayload(current_time=_iso_utc_now())
 
-    @on(Action.status_notification)
+    @on(Action.StatusNotification)
     async def on_status_notification(
         self,
         connector_id: int,
@@ -119,7 +119,7 @@ class ChargePointHandler(OCPPChargePoint):
         )
         return call_result.StatusNotificationPayload()
 
-    @on(Action.meter_values)
+    @on(Action.MeterValues)
     async def on_meter_values(self, connector_id: int, meter_value: List[Dict], **kwargs):
         metrics = _extract_metrics(meter_value)
         payload = charger_service.create_or_update_charger(

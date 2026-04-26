@@ -1,71 +1,134 @@
-import {io, Socket} from 'socket.io-client';
-import { RealTimeData } from '../types/index';
+import { io, Socket } from 'socket.io-client';
+import { ChargerStatus } from '../types';
 
-class WebSocketService {
-  private socket: Socket | null = null;
-  private listeners: ((data: RealTimeData) => void)[] = [];
-  private isConnected: boolean = false;
+interface ChargerEventPayload {
+  charger?: BackendCharger;
+}
 
-  connect() {
-    if (this.socket) {
-      console.log('Connecting to WebSocket server...');
+interface ChargersListPayload {
+  chargers?: BackendCharger[];
+}
+
+interface BackendCharger {
+  id: string;
+  status: ChargerStatus['status'];
+  voltage: number;
+  current: number;
+  power: number;
+  temperature: number;
+  errorCode?: string;
+  lastUpdated: string;
+}
+
+let socket: Socket | null = null;
+let chargers: ChargerStatus[] = [];
+let isConnected = false;
+let listeners: Array<(items: ChargerStatus[]) => void> = [];
+
+function resolveServerUrl(): string {
+  if (process.env.REACT_APP_SOCKET_URL) {
+    return process.env.REACT_APP_SOCKET_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
+  return 'http://localhost:8000';
+}
+
+function toChargerStatus(charger: BackendCharger): ChargerStatus {
+  return {
+    id: charger.id,
+    name: charger.id,
+    status: charger.status,
+    voltage: Number(charger.voltage || 0),
+    current: Number(charger.current || 0),
+    power: Number(charger.power || 0),
+    temperature: Number(charger.temperature || 0),
+    errorCode: charger.errorCode,
+    lastUpdated: new Date(charger.lastUpdated),
+  };
+}
+
+function emitChargers() {
+  const snapshot = [...chargers];
+  listeners.forEach((listener) => listener(snapshot));
+}
+
+function upsertCharger(charger: ChargerStatus) {
+  const idx = chargers.findIndex((item) => item.id === charger.id);
+  if (idx >= 0) {
+    chargers[idx] = charger;
+  } else {
+    chargers.push(charger);
+  }
+  emitChargers();
+}
+
+function connect() {
+  if (socket) {
+    return;
+  }
+
+  socket = io(resolveServerUrl(), {
+    transports: ['websocket'],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+  });
+
+  socket.on('connect', () => {
+    isConnected = true;
+    socket?.emit('get_chargers', {});
+  });
+
+  socket.on('chargers_list', (payload: ChargersListPayload) => {
+    chargers = (payload?.chargers || []).map((item) => toChargerStatus(item));
+    emitChargers();
+  });
+
+  socket.on('charger_updated', (payload: ChargerEventPayload) => {
+    if (!payload || !payload.charger) {
       return;
     }
+    upsertCharger(toChargerStatus(payload.charger));
+  });
 
-    this.socket = io(process.env.REACT_APP_WS_URL || 'http://localhost:8000', {
-        transports: ['websocket'],
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-      });
+  socket.on('disconnect', () => {
+    isConnected = false;
+  });
 
-    this.socket.on('connect', () => {
-      console.log('WebSocket connected');
-      this.isConnected = true;
-    });
+  socket.on('connect_error', (error) => {
+    console.error('WebSocket connection error:', error);
+  });
+}
 
-    this.socket.on('chargerData', (data: RealTimeData) => {
-      this.listeners.forEach(listener => listener(data));
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      this.isConnected = false;
-    });
-    
-    this.socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
-    });
-  }
-
-  //to be able to disconnect from backend
-  disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-      this.isConnected = false;
-      console.log('WebSocket disconnected');
-    }
-  }
-
-  //to be able to subscribe to real-time data updates
-  subscribe(callback: (data: RealTimeData) => void): () => void {
-    this.listeners.push(callback);
-    console.log(`[WS] Subscriber added (total: ${this.listeners.length})`);
-
-    // Return unsubscribe function
-    return () => {
-      this.listeners = this.listeners.filter(cb => cb !== callback);
-      console.log(`[WS] Subscriber removed (remaining: ${this.listeners.length})`);
-    };
-  }
-
-  //check current connection status
-  getConnectionStatus(): boolean {
-    return this.isConnected;
+function disconnect() {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+    isConnected = false;
   }
 }
 
-    export default new WebSocketService();
-    
+function subscribe(callback: (items: ChargerStatus[]) => void): () => void {
+  listeners.push(callback);
+  callback([...chargers]);
+
+  return () => {
+    listeners = listeners.filter((cb) => cb !== callback);
+  };
+}
+
+function getConnectionStatus(): boolean {
+  return isConnected;
+}
+
+export default {
+  connect,
+  disconnect,
+  subscribe,
+  getConnectionStatus,
+};
