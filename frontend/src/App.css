@@ -290,6 +290,34 @@ h1, h2, h3 {
   backdrop-filter: blur(6px);
 }
 
+.hud-screen--fullscreen {
+  padding: 32px;
+  background:
+    radial-gradient(ellipse at top left, rgba(22, 147, 214, 0.24), transparent 45%),
+    radial-gradient(ellipse at bottom right, rgba(143, 1, 119, 0.24), transparent 45%),
+    rgba(4, 6, 12, 0.96);
+}
+
+.hud-panel--fullscreen {
+  width: min(1240px, 100%);
+  min-height: calc(100vh - 64px);
+  padding: 28px;
+}
+
+.hud-panel--fullscreen .hud-grid {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.hud-panel--fullscreen .hud-grid p {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+
+.hud-panel--fullscreen .hud-button {
+  padding: 12px 16px;
+  font-size: 1rem;
+}
+
 .hud-header {
   display: flex;
   align-items: center;
@@ -297,10 +325,95 @@ h1, h2, h3 {
   gap: 12px;
 }
 
+.hud-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .hud-header h1 {
   margin: 0;
   color: #f6f8ff;
   font-size: clamp(1.25rem, 2.8vw, 2rem);
+}
+
+.hud-subtitle {
+  margin: 2px 0 0;
+  color: #b8c7f7;
+  font-size: 0.85rem;
+}
+
+.hud-controls {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hud-button {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(99, 189, 255, 0.15);
+  color: #eef4ff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.hud-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.hud-xr-status {
+  color: #c3d1ff;
+  font-size: 0.88rem;
+}
+
+.hud-error {
+  margin-top: 10px;
+  margin-bottom: 0;
+  color: #ffb9b9;
+  font-size: 0.9rem;
+}
+
+.hud-guide {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(189, 226, 255, 0.08);
+}
+
+.hud-guide h2 {
+  margin: 0;
+  color: #d9e5ff;
+  font-size: 0.95rem;
+}
+
+.hud-guide p {
+  margin: 6px 0 0;
+  color: #c8d8ff;
+  font-size: 0.88rem;
+}
+
+.hud-guide-controls {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hud-guide-checkbox {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #d9e5ff;
+  font-size: 0.85rem;
 }
 
 .hud-grid {
@@ -315,6 +428,12 @@ h1, h2, h3 {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
   padding: 12px;
+}
+
+.hud-grid article.is-active {
+  border-color: rgba(111, 201, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(111, 201, 255, 0.18);
+  background: rgba(111, 201, 255, 0.12);
 }
 
 .hud-grid h2 {
@@ -340,6 +459,61 @@ h1, h2, h3 {
   color: #c3d1ff;
   font-size: 0.9rem;
   flex-wrap: wrap;
+}
+
+/* Charger picker screen */
+.hud-picker {
+  max-width: 560px;
+}
+
+.hud-picker h1 {
+  color: #f6f8ff;
+  margin: 0 0 4px;
+}
+
+.hud-picker-list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hud-picker-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6f8ff;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.hud-picker-card:hover {
+  background: rgba(99, 189, 255, 0.14);
+  border-color: rgba(111, 201, 255, 0.6);
+}
+
+.hud-picker-name {
+  flex: 1;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.hud-picker-meta {
+  font-size: 0.82rem;
+  color: #b8c7f7;
+  margin-left: auto;
+}
+
+.hud-picker-meta--fault {
+  color: #ffb9b9;
 }
 
 #tracking {

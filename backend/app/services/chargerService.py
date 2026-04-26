@@ -13,17 +13,59 @@ class ChargerService:
 		self._seed_data()
 
 	def _seed_data(self) -> None:
-		placeholder = ChargerStatus(
-			charger_id="CH-001",
-			status=ChargerStatusEnum.CHARGING,
-			last_updated=datetime.now(timezone.utc),
-			voltage=402.0,
-			current=118.0,
-			power=47.4,
-			temperature=41.0,
-		)
+		seed_chargers = [
+			ChargerStatus(
+				charger_id="Belinda Street",
+				status=ChargerStatusEnum.CHARGING,
+				last_updated=datetime.now(timezone.utc),
+				voltage=402.0,
+				current=118.0,
+				power=47.4,
+				temperature=41.0,
+			),
+			ChargerStatus(
+				charger_id="Hopewell View",
+				status=ChargerStatusEnum.ONLINE,
+				last_updated=datetime.now(timezone.utc),
+				voltage=398.0,
+				current=0.0,
+				power=0.0,
+				temperature=34.5,
+			),
+			ChargerStatus(
+				charger_id="Albion Street",
+				status=ChargerStatusEnum.FAULT,
+				last_updated=datetime.now(timezone.utc),
+				voltage=0.0,
+				current=0.0,
+				power=0.0,
+				temperature=29.8,
+				error_code="ConnectorLockFailure",
+				error_description="Connector lock did not engage during session start.",
+			),
+			ChargerStatus(
+				charger_id="Mill Road",
+				status=ChargerStatusEnum.CHARGING,
+				last_updated=datetime.now(timezone.utc),
+				voltage=405.5,
+				current=96.2,
+				power=39.1,
+				temperature=38.6,
+			),
+			ChargerStatus(
+				charger_id="Station Parade",
+				status=ChargerStatusEnum.ONLINE,
+				last_updated=datetime.now(timezone.utc),
+				voltage=401.1,
+				current=0.0,
+				power=0.0,
+				temperature=33.2,
+			),
+		]
+
 		with self._lock:
-			self._chargers[placeholder.charger_id] = placeholder
+			for charger in seed_chargers:
+				self._chargers[charger.charger_id] = charger
 
 	@staticmethod
 	def _to_dict(charger: ChargerStatus) -> Dict[str, object]:

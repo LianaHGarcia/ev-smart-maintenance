@@ -7,7 +7,7 @@ const Home: React.FC = () => {
       <section className="hero">
         <h1>FutureNow Smart Maintenance</h1>
         <p>Where the future is endless</p>
-        <Link to="/dashboard" className="cta-button">Get Started</Link>
+        <Link to="/hud?guide=1&handsFree=1" className="cta-button">Get Started</Link>
       </section>
     </div>
   );
