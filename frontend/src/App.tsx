@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Maintenance from './pages/Maintenance';
 import Reports from './pages/Reports';
 import About from './pages/About';
+import Hud from './pages/Hud';
 import Layout from './components/Layout/Layout';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/about" element={<About />} />
+        <Route path="/hud" element={<Hud />} />
       </Route>
     </Routes>
   );

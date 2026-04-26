@@ -230,6 +230,118 @@ h1, h2, h3 {
   background: #efefef;
 }
 
+.alert-overlay {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 340px;
+}
+
+.alert-overlay__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(179, 32, 32, 0.93);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.alert-overlay__item p {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+}
+
+.alert-overlay__item button {
+  border: none;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.hud-screen {
+  min-height: calc(100vh - 140px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background:
+    radial-gradient(ellipse at top left, rgba(22, 147, 214, 0.18), transparent 45%),
+    radial-gradient(ellipse at bottom right, rgba(143, 1, 119, 0.18), transparent 45%),
+    rgba(6, 8, 16, 0.85);
+}
+
+.hud-panel {
+  width: min(980px, 100%);
+  color: #f6f8ff;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(12, 16, 31, 0.74);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+  padding: 18px;
+  backdrop-filter: blur(6px);
+}
+
+.hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hud-header h1 {
+  margin: 0;
+  color: #f6f8ff;
+  font-size: clamp(1.25rem, 2.8vw, 2rem);
+}
+
+.hud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.hud-grid article {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px;
+}
+
+.hud-grid h2 {
+  margin: 0;
+  color: #bdd3ff;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hud-grid p {
+  margin: 6px 0 0;
+  color: #fff;
+  font-size: clamp(1.4rem, 4vw, 2.3rem);
+  font-weight: 700;
+}
+
+.hud-footer {
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #c3d1ff;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
 #tracking {
   display: flex;
   flex-direction: column;

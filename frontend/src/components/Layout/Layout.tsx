@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import AlertOverlay from '../AlertOverlay';
 
 const navItems = [
     { name: 'Home', path: '/' },
@@ -37,6 +38,8 @@ const Layout: React.FC = () => {
             <main className="layout-content">
                 <Outlet />
             </main>
+            {/* Mounted at layout level so alerts appear on every route, including HUD. */}
+            <AlertOverlay />
             <footer className="layout-footer">
                 <p>&copy; 2026 FutureNow Energy. All rights reserved.</p>
             </footer>
