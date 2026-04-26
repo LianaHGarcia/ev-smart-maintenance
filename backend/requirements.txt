@@ -3,3 +3,5 @@ python-socketio==5.16.1
 uvicorn==0.44.0
 ocpp==0.20
 websockets>=10,<12
+pytest==8.4.1
+httpx==0.28.1
