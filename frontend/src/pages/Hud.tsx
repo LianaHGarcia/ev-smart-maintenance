@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChargerStatus } from '../types';
+import { SessionRecording } from '../types';
+import { uploadSessionRecording } from '../services/api';
 import websocketService from '../services/websocket';
 
 type MetricKey = 'all' | 'voltage' | 'current' | 'power' | 'temperature' | 'status' | 'error';
 type HudPhase = 'select' | 'hud';
+type RecordingMode = 'screen' | 'camera';
 
 const GUIDE_STORAGE_KEY = 'evsmart.hud.guide.dismissed';
 
@@ -33,10 +36,207 @@ const Hud: React.FC = () => {
   const [guideDontShowAgain, setGuideDontShowAgain] = useState<boolean>(false);
   const [focusMetric, setFocusMetric] = useState<MetricKey>('all');
   const [assistantMessage, setAssistantMessage] = useState<string>('');
+  const [recordingSupported, setRecordingSupported] = useState<boolean>(false);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingMode, setRecordingMode] = useState<RecordingMode | null>(null);
+  const [recordingElapsedSeconds, setRecordingElapsedSeconds] = useState<number>(0);
+  const [recordingError, setRecordingError] = useState<string>('');
+  const [recordingStatus, setRecordingStatus] = useState<string>('');
+  const [recordingUrl, setRecordingUrl] = useState<string>('');
+  const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
+  const [recordingFileName, setRecordingFileName] = useState<string>('');
+  const [operatorName, setOperatorName] = useState<string>('');
+  const [isUploadingRecording, setIsUploadingRecording] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string>('');
+  const [uploadedRecording, setUploadedRecording] = useState<SessionRecording | null>(null);
   const hudRootRef = useRef<HTMLElement>(null);
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<BlobPart[]>([]);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  const recordingEndedAtRef = useRef<number | null>(null);
 
   const handsFreeRequested = searchParams.get('handsFree') === '1';
+
+  const formatRecordingDuration = (totalSeconds: number): string => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  const stopRecordingTracks = () => {
+    if (!mediaStreamRef.current) {
+      return;
+    }
+
+    mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  };
+
+  const clearRecordingUrl = () => {
+    if (!recordingUrl) {
+      return;
+    }
+
+    window.URL.revokeObjectURL(recordingUrl);
+    setRecordingUrl('');
+  };
+
+  const buildRecordingFileName = (startedAt: number | null = recordingStartedAtRef.current) => {
+    const chargerId = (selectedChargerId || activeCharger?.id || 'session').replace(/[^a-z0-9_-]+/gi, '-');
+    const baseTime = startedAt ? new Date(startedAt) : new Date();
+    const timestamp = baseTime.toISOString().replace(/[.:]/g, '-');
+    return `${chargerId}-${timestamp}.webm`;
+  };
+
+  const getPreferredMimeType = (): string | undefined => {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+      return undefined;
+    }
+
+    const candidates = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+    ];
+
+    return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate));
+  };
+
+  const stopRecording = (statusMessage?: string) => {
+    const recorder = mediaRecorderRef.current;
+
+    if (!recorder) {
+      stopRecordingTracks();
+      setIsRecording(false);
+      if (statusMessage) {
+        setRecordingStatus(statusMessage);
+      }
+      return;
+    }
+
+    if (statusMessage) {
+      setRecordingStatus(statusMessage);
+    }
+
+    if (recorder.state === 'inactive') {
+      mediaRecorderRef.current = null;
+      stopRecordingTracks();
+      setIsRecording(false);
+      return;
+    }
+
+    recorder.stop();
+  };
+
+  const startRecording = async () => {
+    if (!recordingSupported) {
+      setRecordingError('Recording is not available in this browser.');
+      return;
+    }
+
+    setRecordingError('');
+    setRecordingStatus('');
+    setUploadError('');
+    setUploadedRecording(null);
+    clearRecordingUrl();
+    setRecordingBlob(null);
+
+    const mediaDevices = navigator.mediaDevices as MediaDevices & {
+      getDisplayMedia?: (constraints?: MediaStreamConstraints) => Promise<MediaStream>;
+    };
+
+    let stream: MediaStream | null = null;
+    let nextMode: RecordingMode = 'camera';
+
+    try {
+      if (typeof mediaDevices.getDisplayMedia === 'function') {
+        try {
+          stream = await mediaDevices.getDisplayMedia({
+            video: true,
+            audio: true,
+          });
+          nextMode = 'screen';
+        } catch {
+          stream = null;
+        }
+      }
+
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        nextMode = 'camera';
+      }
+
+      const mimeType = getPreferredMimeType();
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+      mediaRecorderRef.current = recorder;
+      mediaStreamRef.current = stream;
+      recordingChunksRef.current = [];
+      recordingStartedAtRef.current = Date.now();
+      recordingEndedAtRef.current = null;
+      setRecordingMode(nextMode);
+      setRecordingElapsedSeconds(0);
+      setRecordingFileName(buildRecordingFileName(Date.now()));
+
+      stream.getTracks().forEach((track) => {
+        track.onended = () => {
+          if (mediaRecorderRef.current?.state === 'recording') {
+            stopRecording('Recording stopped by the device or browser.');
+          }
+        };
+      });
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onerror = () => {
+        setRecordingError('Recording failed in this browser.');
+        stopRecordingTracks();
+        mediaRecorderRef.current = null;
+        setIsRecording(false);
+      };
+
+      recorder.onstop = () => {
+        recordingEndedAtRef.current = Date.now();
+        const completedBlob = new Blob(recordingChunksRef.current, {
+          type: recorder.mimeType || 'video/webm',
+        });
+
+        mediaRecorderRef.current = null;
+        stopRecordingTracks();
+        setIsRecording(false);
+
+        if (completedBlob.size === 0) {
+          setRecordingError('Recording finished, but no media data was captured.');
+          return;
+        }
+
+        const nextUrl = window.URL.createObjectURL(completedBlob);
+        setRecordingBlob(completedBlob);
+        setRecordingUrl(nextUrl);
+        setRecordingStatus(`Recording ready. Download or upload ${recordingFileName || buildRecordingFileName()} to keep a copy.`);
+      };
+
+      recorder.start(1000);
+      setIsRecording(true);
+      setRecordingStatus(nextMode === 'screen' ? 'Recording the HUD session.' : 'Recording camera and microphone feed.');
+      setAssistantMessage(nextMode === 'screen' ? 'Session recording started from the headset display.' : 'Session recording started from the headset camera.');
+    } catch {
+      stopRecordingTracks();
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
+      setRecordingMode(null);
+      setRecordingError('Unable to access screen, camera, or microphone for recording.');
+    }
+  };
 
   useEffect(() => {
     const dismissed = window.localStorage.getItem(GUIDE_STORAGE_KEY) === '1';
@@ -69,11 +269,35 @@ const Hud: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    setRecordingSupported(Boolean(window.MediaRecorder && navigator.mediaDevices?.getUserMedia));
+  }, []);
+
+  useEffect(() => {
     return () => {
       stopVoiceControl();
+      stopRecording();
+      clearRecordingUrl();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isRecording) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      const startedAt = recordingStartedAtRef.current;
+      if (!startedAt) {
+        return;
+      }
+      setRecordingElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isRecording]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -210,6 +434,16 @@ const Hud: React.FC = () => {
       return;
     }
 
+    if (command.includes('start recording') || command.includes('record session')) {
+      startRecording();
+      return;
+    }
+
+    if (command.includes('stop recording')) {
+      stopRecording('Recording stopped from voice control.');
+      return;
+    }
+
     if (!activeCharger) return;
 
     if (command.includes('show voltage')) {
@@ -306,6 +540,48 @@ const Hud: React.FC = () => {
       recognitionRef.current = null;
     }
     setVoiceEnabled(false);
+  };
+
+  const uploadFinishedRecording = async () => {
+    if (!recordingBlob || !activeCharger) {
+      setUploadError('Record a session before uploading it.');
+      return;
+    }
+
+    if (!operatorName.trim()) {
+      setUploadError('Enter the operator name before uploading the session.');
+      return;
+    }
+
+    const startedAt = recordingStartedAtRef.current;
+    const endedAt = recordingEndedAtRef.current || Date.now();
+    if (!startedAt) {
+      setUploadError('Recording start time is missing. Record the session again.');
+      return;
+    }
+
+    setIsUploadingRecording(true);
+    setUploadError('');
+
+    try {
+      const uploaded = await uploadSessionRecording({
+        video: recordingBlob,
+        filename: recordingFileName || buildRecordingFileName(startedAt),
+        chargerId: activeCharger.id,
+        operatorName: operatorName.trim(),
+        startedAt: new Date(startedAt).toISOString(),
+        endedAt: new Date(endedAt).toISOString(),
+        durationSeconds: Math.max(0, Math.round((endedAt - startedAt) / 1000)),
+        recordingMode: recordingMode || undefined,
+      });
+
+      setUploadedRecording(uploaded);
+      setRecordingStatus(`Recording uploaded for ${uploaded.operator_name} on ${uploaded.charger_id}.`);
+    } catch {
+      setUploadError('Upload failed. Check that the backend is running and retry.');
+    } finally {
+      setIsUploadingRecording(false);
+    }
   };
 
   const activeCharger = useMemo(() => {
@@ -435,6 +711,14 @@ const Hud: React.FC = () => {
           >
             {voiceEnabled ? 'Disable Voice' : 'Enable Voice'}
           </button>
+          <button
+            type="button"
+            className={`hud-button${isRecording ? ' hud-button--recording' : ''}`}
+            onClick={isRecording ? () => stopRecording('Recording stopped by the operator.') : startRecording}
+            disabled={!recordingSupported}
+          >
+            {isRecording ? 'Stop Recording' : 'Record Session'}
+          </button>
           <button type="button" className="hud-button" onClick={() => cycleCharger(1)}>
             Next Charger
           </button>
@@ -445,8 +729,58 @@ const Hud: React.FC = () => {
 
         {fullscreenError ? <p className="hud-error">{fullscreenError}</p> : null}
         {voiceError ? <p className="hud-error">{voiceError}</p> : null}
+        {recordingError ? <p className="hud-error">{recordingError}</p> : null}
+        {uploadError ? <p className="hud-error">{uploadError}</p> : null}
         {voiceTranscript ? <p className="hud-xr-status">Heard: {voiceTranscript}</p> : null}
         {assistantMessage ? <p className="hud-xr-status">Assistant: {assistantMessage}</p> : null}
+
+        <section className="hud-recording" aria-label="Session recording controls">
+          <div>
+            <h2>Session Recording</h2>
+            <p>
+              {isRecording
+                ? `${recordingMode === 'screen' ? 'Capturing headset display' : 'Capturing camera and microphone'} for ${formatRecordingDuration(recordingElapsedSeconds)}.`
+                : 'Use this on the headset to save a local video recording of the maintenance session.'}
+            </p>
+            <label className="hud-recording-label" htmlFor="operator-name">
+              Operator
+            </label>
+            <input
+              id="operator-name"
+              className="hud-recording-input"
+              type="text"
+              value={operatorName}
+              onChange={(event) => setOperatorName(event.target.value)}
+              placeholder="Engineer name"
+            />
+          </div>
+          <div className="hud-recording-meta">
+            <span className={`status-pill ${isRecording ? 'status-pill--recording' : 'status-pill--offline'}`}>
+              {isRecording ? 'recording live' : 'idle'}
+            </span>
+            {recordingStatus ? <span className="hud-xr-status">{recordingStatus}</span> : null}
+            {recordingUrl ? (
+              <a href={recordingUrl} download={recordingFileName || buildRecordingFileName()} className="hud-button hud-button--link">
+                Download Recording
+              </a>
+            ) : null}
+            {recordingBlob ? (
+              <button
+                type="button"
+                className="hud-button"
+                onClick={uploadFinishedRecording}
+                disabled={isUploadingRecording}
+              >
+                {isUploadingRecording ? 'Uploading...' : 'Upload Recording'}
+              </button>
+            ) : null}
+            {uploadedRecording ? (
+              <a href={uploadedRecording.downloadUrl} className="hud-button hud-button--link" target="_blank" rel="noreferrer">
+                Open Stored Video
+              </a>
+            ) : null}
+          </div>
+        </section>
 
         {guideVisible ? (
           <section className="hud-guide" aria-label="Guided hands-free controls">
@@ -471,7 +805,7 @@ const Hud: React.FC = () => {
               />
               Don't show again
             </label>
-            <p>Voice commands: show voltage, show current, show power, show temperature, show status, show error, next charger, fullscreen.</p>
+            <p>Voice commands: show voltage, show current, show power, show temperature, show status, show error, next charger, fullscreen, start recording, stop recording.</p>
           </section>
         ) : null}
 

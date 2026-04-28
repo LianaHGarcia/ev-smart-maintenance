@@ -35,3 +35,28 @@ class ApiResponse(BaseModel):
     success: bool
     message: str
     data: Optional[dict] = None
+
+
+class SessionRecordingAnnotation(BaseModel):
+    annotation_id: str
+    created_at: datetime
+    operator_name: str
+    timestamp_seconds: float
+    note: str
+
+
+class SessionRecordingMetadata(BaseModel):
+    recording_id: str
+    charger_id: str
+    operator_name: str
+    started_at: datetime
+    ended_at: datetime
+    uploaded_at: datetime
+    duration_seconds: int
+    recording_mode: Optional[str] = None
+    original_filename: str
+    stored_filename: str
+    content_type: str
+    file_size_bytes: int
+    download_url: Optional[str] = None
+    annotations: List[SessionRecordingAnnotation] = []

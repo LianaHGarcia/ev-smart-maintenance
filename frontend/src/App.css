@@ -118,10 +118,187 @@ h1, h2, h3 {
 
 .dashboard,
 .maintenance,
-.reports {
+.reports,
+.recordings-page {
   background: white;
   padding: 20px;
   border-radius: 5px;
+}
+
+.recordings-page__header p {
+  color: #555;
+  margin: 8px 0 0;
+}
+
+.recordings-page__error {
+  color: #b32020;
+  margin-top: 12px;
+}
+
+.recordings-page__layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.recordings-list-panel,
+.recordings-detail-card,
+.recordings-annotations-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+}
+
+.recordings-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recordings-list__item {
+  width: 100%;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #faf9ff;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recordings-list__item.is-active {
+  border-color: #8F0177;
+  box-shadow: 0 0 0 2px rgba(143, 1, 119, 0.12);
+}
+
+.recordings-list__item span {
+  color: #555;
+  font-size: 0.88rem;
+}
+
+.recordings-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.recordings-detail-card__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.recordings-detail-card__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recordings-player {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 16px;
+  background: #0d0d14;
+}
+
+.recordings-detail-card__actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.recordings-secondary-button {
+  background: white;
+  color: #8F0177;
+  border: 1px solid #8F0177;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.recordings-annotations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.recordings-annotations-card label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: #1A05A2;
+}
+
+.recordings-annotations-card input,
+.recordings-annotations-card textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.recordings-annotations-card .cta-button {
+  border: none;
+  cursor: pointer;
+}
+
+.recordings-annotations-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recordings-annotations-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+}
+
+.recordings-annotations-list__time {
+  align-self: start;
+  border: none;
+  background: #fae7f6;
+  color: #8F0177;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.recordings-annotations-list p {
+  margin: 6px 0 4px;
+}
+
+.recordings-annotations-list span {
+  color: #666;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 960px) {
+  .recordings-page__layout,
+  .recordings-annotations-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .data-cards {
@@ -228,6 +405,11 @@ h1, h2, h3 {
 .status-pill--offline {
   color: #525252;
   background: #efefef;
+}
+
+.status-pill--recording {
+  color: #fff1f1;
+  background: #b32020;
 }
 
 .alert-overlay {
@@ -368,6 +550,18 @@ h1, h2, h3 {
   cursor: wait;
 }
 
+.hud-button--recording {
+  background: rgba(179, 32, 32, 0.32);
+  border-color: rgba(255, 138, 138, 0.45);
+}
+
+.hud-button--link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .hud-xr-status {
   color: #c3d1ff;
   font-size: 0.88rem;
@@ -414,6 +608,60 @@ h1, h2, h3 {
   align-items: center;
   color: #d9e5ff;
   font-size: 0.85rem;
+}
+
+.hud-recording {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(179, 32, 32, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hud-recording h2 {
+  margin: 0;
+  color: #ffe0e0;
+  font-size: 0.95rem;
+}
+
+.hud-recording p {
+  margin: 6px 0 0;
+  color: #ffd3d3;
+  font-size: 0.88rem;
+}
+
+.hud-recording-label {
+  margin-top: 10px;
+  display: block;
+  color: #ffe0e0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.hud-recording-input {
+  margin-top: 6px;
+  width: min(280px, 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(10, 12, 20, 0.55);
+  color: #fff;
+  padding: 10px 12px;
+}
+
+.hud-recording-input::placeholder {
+  color: #d3a8a8;
+}
+
+.hud-recording-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .hud-grid {
