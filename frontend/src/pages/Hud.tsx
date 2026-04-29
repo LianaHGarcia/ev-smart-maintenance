@@ -31,6 +31,7 @@ const Hud: React.FC = () => {
   const [voiceEnabled, setVoiceEnabled] = useState<boolean>(false);
   const [voiceTranscript, setVoiceTranscript] = useState<string>('');
   const [voiceError, setVoiceError] = useState<string>('');
+  const [isQuestBrowser, setIsQuestBrowser] = useState<boolean>(false);
   const [guideVisible, setGuideVisible] = useState<boolean>(searchParams.get('guide') === '1');
   const [guideStep, setGuideStep] = useState<number>(0);
   const [guideDontShowAgain, setGuideDontShowAgain] = useState<boolean>(false);
@@ -51,6 +52,9 @@ const Hud: React.FC = () => {
   const [uploadedRecording, setUploadedRecording] = useState<SessionRecording | null>(null);
   const hudRootRef = useRef<HTMLElement>(null);
   const recognitionRef = useRef<any>(null);
+  const voiceEnabledRef = useRef<boolean>(false);
+  const voiceRestartTimeoutRef = useRef<number | null>(null);
+  const voiceRestartAttemptsRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordingChunksRef = useRef<BlobPart[]>([]);
@@ -63,6 +67,25 @@ const Hud: React.FC = () => {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  const getVoiceErrorMessage = (errorCode: string): string => {
+    if (errorCode === 'not-allowed' || errorCode === 'service-not-allowed') {
+      return 'Microphone permission denied. Allow mic access in browser settings and reload HUD.';
+    }
+    if (errorCode === 'audio-capture') {
+      return 'No microphone was detected. Check headset/browser audio input settings.';
+    }
+    if (errorCode === 'network') {
+      return 'Speech recognition network error. Check connection and try again.';
+    }
+    if (errorCode === 'aborted') {
+      return 'Voice recognition was interrupted. Trying to reconnect...';
+    }
+    if (errorCode === 'no-speech') {
+      return 'No speech detected. Speak closer to the headset microphone.';
+    }
+    return 'Voice recognition error. You can still use the HUD buttons.';
   };
 
   const stopRecordingTracks = () => {
@@ -266,7 +289,14 @@ const Hud: React.FC = () => {
   useEffect(() => {
     const VoiceCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     setVoiceSupported(Boolean(VoiceCtor));
+
+    const ua = window.navigator.userAgent || '';
+    setIsQuestBrowser(/OculusBrowser|Quest/i.test(ua));
   }, []);
+
+  useEffect(() => {
+    voiceEnabledRef.current = voiceEnabled;
+  }, [voiceEnabled]);
 
   useEffect(() => {
     setRecordingSupported(Boolean(window.MediaRecorder && navigator.mediaDevices?.getUserMedia));
@@ -491,7 +521,7 @@ const Hud: React.FC = () => {
     setAssistantMessage('Command not recognised. Try: show voltage, show status, next charger, fullscreen.');
   };
 
-  const startVoiceControl = () => {
+  const startVoiceControl = async () => {
     try {
       const VoiceCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!VoiceCtor) {
@@ -499,10 +529,31 @@ const Hud: React.FC = () => {
         return;
       }
 
+      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+        setVoiceError('Voice requires HTTPS. Use the ngrok HTTPS URL for the HUD page.');
+        return;
+      }
+
+      if (navigator.mediaDevices?.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach((track) => track.stop());
+        } catch {
+          setVoiceError('Microphone access blocked. Allow microphone permissions and retry.');
+          return;
+        }
+      }
+
       const recognition = new VoiceCtor();
       recognition.lang = 'en-GB';
-      recognition.continuous = true;
+      // Quest Browser is unstable with continuous mode. Use single-utterance mode and re-arm.
+      recognition.continuous = !isQuestBrowser;
       recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setVoiceEnabled(true);
+        setVoiceError('');
+      };
 
       recognition.onresult = (event: any) => {
         const result = event.results[event.results.length - 1];
@@ -512,27 +563,84 @@ const Hud: React.FC = () => {
         handleVoiceCommand(String(result[0].transcript || ''));
       };
 
-      recognition.onerror = () => {
-        setVoiceError('Voice recognition error. You can still use the HUD buttons.');
+      recognition.onerror = (event: any) => {
+        const errorCode = String(event?.error || 'unknown');
+
+        // In Quest/browser handoff scenarios, 'aborted' and 'no-speech' are often transient.
+        // Do a soft restart with backoff instead of hard-failing.
+        if ((errorCode === 'aborted' || errorCode === 'no-speech') && voiceEnabledRef.current && recognitionRef.current === recognition) {
+          voiceRestartAttemptsRef.current += 1;
+          const delayMs = Math.min(1400, 250 + voiceRestartAttemptsRef.current * 120);
+          if (errorCode === 'aborted') {
+            setVoiceError(getVoiceErrorMessage(errorCode));
+          } else {
+            setVoiceError('No speech detected. Listening again...');
+          }
+          if (voiceRestartTimeoutRef.current) {
+            window.clearTimeout(voiceRestartTimeoutRef.current);
+          }
+          voiceRestartTimeoutRef.current = window.setTimeout(() => {
+            if (!voiceEnabledRef.current || recognitionRef.current !== recognition) {
+              return;
+            }
+            try {
+              recognition.start();
+              setVoiceError('');
+            } catch {
+              // Browser may still be transitioning states.
+            }
+          }, delayMs);
+          return;
+        }
+
+        setVoiceError(getVoiceErrorMessage(errorCode));
+        if (errorCode === 'not-allowed' || errorCode === 'service-not-allowed' || errorCode === 'audio-capture') {
+          setVoiceEnabled(false);
+          voiceEnabledRef.current = false;
+        }
       };
 
       recognition.onend = () => {
         // Keep recognition active when hands-free mode is enabled.
-        if (voiceEnabled && recognitionRef.current) {
-          recognitionRef.current.start();
+        if (!voiceEnabledRef.current || recognitionRef.current !== recognition) {
+          return;
         }
+        if (voiceRestartTimeoutRef.current) {
+          window.clearTimeout(voiceRestartTimeoutRef.current);
+        }
+        const rearmDelay = isQuestBrowser ? 550 : 120;
+        voiceRestartTimeoutRef.current = window.setTimeout(() => {
+          if (!voiceEnabledRef.current || recognitionRef.current !== recognition) {
+            return;
+          }
+          try {
+            recognition.start();
+            setVoiceError('');
+          } catch {
+            // Restart can fail if browser is still transitioning state.
+          }
+        }, rearmDelay);
       };
 
       recognitionRef.current = recognition;
+      voiceEnabledRef.current = true;
+      voiceRestartAttemptsRef.current = 0;
       recognition.start();
-      setVoiceEnabled(true);
       setVoiceError('');
     } catch {
+      setVoiceEnabled(false);
+      voiceEnabledRef.current = false;
       setVoiceError('Unable to start voice control.');
     }
   };
 
   const stopVoiceControl = () => {
+    voiceEnabledRef.current = false;
+    voiceRestartAttemptsRef.current = 0;
+    if (voiceRestartTimeoutRef.current) {
+      window.clearTimeout(voiceRestartTimeoutRef.current);
+      voiceRestartTimeoutRef.current = null;
+    }
     const recognition = recognitionRef.current;
     if (recognition) {
       recognition.onend = null;
@@ -729,6 +837,7 @@ const Hud: React.FC = () => {
 
         {fullscreenError ? <p className="hud-error">{fullscreenError}</p> : null}
         {voiceError ? <p className="hud-error">{voiceError}</p> : null}
+        {isQuestBrowser ? <p className="hud-xr-status">Quest voice mode active: short listen windows with auto-reconnect for stability.</p> : null}
         {recordingError ? <p className="hud-error">{recordingError}</p> : null}
         {uploadError ? <p className="hud-error">{uploadError}</p> : null}
         {voiceTranscript ? <p className="hud-xr-status">Heard: {voiceTranscript}</p> : null}

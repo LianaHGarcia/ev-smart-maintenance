@@ -1,0 +1,16 @@
+{
+  "recording_id": "703e70a2759449b1b4b58b127b62655a",
+  "charger_id": "pi-sim-01",
+  "operator_name": "Liana",
+  "started_at": "2026-04-28T23:20:33.937000Z",
+  "ended_at": "2026-04-28T23:20:56.106000Z",
+  "uploaded_at": "2026-04-28T23:21:16.274511Z",
+  "duration_seconds": 22,
+  "recording_mode": "screen",
+  "original_filename": "Mill-Road-2026-04-28T23-20-33-937Z.webm",
+  "stored_filename": "703e70a2759449b1b4b58b127b62655a.webm",
+  "content_type": "video/webm;codecs=vp9,opus",
+  "file_size_bytes": 201344,
+  "download_url": null,
+  "annotations": []
+}

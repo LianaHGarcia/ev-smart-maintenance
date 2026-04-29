@@ -17,6 +17,13 @@ const sections: { title: string; description: ReactNode; tips: string[] }[] = [
     tips: ['Use "Scheduled" for upcoming work so nothing slips through.', 'Completed tasks are archived. You can review them in Reports.'],
   },
   {
+    title: 'Recordings',
+    description: (
+      <>Access recordings made during the session for learning and documentation purposes.</>
+    ),
+    tips: ['Use "Scheduled" for upcoming work so nothing slips through.', 'Completed tasks are archived. You can review them in Reports.'],
+  },
+  {
     title: 'Reports & Analytics',
     description: (
       <>Access historical data across your fleet. The reports page shows trends like recurring faults, average service intervals, and charge-cycle statistics so you can make proactive decisions.</>
