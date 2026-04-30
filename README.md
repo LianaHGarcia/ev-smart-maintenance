@@ -3,6 +3,74 @@ Dissertation project on smart glasses in maintenance.
 
 The energy industry is one of the core industries that we need to run our day to day lives and quite literally contributes to climate change. As wide as it is, there are many ways to improve operations from the simplest tasks to the most complex ones. I want to combine different technologies and find new ways we can adopt them into the industry and this is one of the ways. Welcome.
 
+---
+
+## Running the System
+
+### 1. Backend
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+The API will be available at `http://localhost:8000`.  
+The OCPP 1.6 WebSocket server starts automatically on `ws://localhost:9000`.
+
+---
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The dashboard will open at `http://localhost:3000`.
+
+---
+
+### 3. Expose Publicly via ngrok (required for Quest HUD)
+
+```bash
+ngrok http 8000
+```
+
+Open the app at:
+
+```
+https://survey-brought-wound.ngrok-free.dev
+```
+
+---
+
+### 4. Run the Pi OCPP Simulator
+
+```bash
+cd backend
+.venv/bin/python scripts/pi_ocpp_simulator.py \
+  --server ws://localhost:9000 \
+  --charge-point-id pi-sim-01 \
+  --mode charging
+```
+
+Use `--mode fault` to simulate a charger fault instead.
+
+---
+
+### 5. Run Backend Tests
+
+```bash
+cd backend
+.venv/bin/python -m pytest tests -v
+```
+
+---
+
 ## Structure
 
 - `backend/` – Python backend to send data to the dashboard and, later, smart glasses.
